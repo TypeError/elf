@@ -15,22 +15,22 @@
 
 ---
 
-**ELF** (Exposure Lookup Framework) is a modern Python library that streamlines the aggregation, parsing, and analysis of vulnerability data from multiple trusted sources, including:
+**ELF** (Exposure Lookup Framework) is a modern Python library that streamlines the **aggregation**, **parsing**, and **analysis** of vulnerability data from multiple trusted sources, including:
 
-- **[CISA KEV](#cisa-kev)**: Authoritative catalog of actively exploited vulnerabilities.
-- **[FIRST EPSS](#first-epss)**: Predictive scoring system to gauge exploitation likelihood.
-- **[NIST NVD](#nist-nvd)**: Comprehensive CVE database maintained by the National Institute of Standards and Technology.
+- **[CISA KEV](#cisa-kev)** – Authoritative catalog of actively exploited vulnerabilities
+- **[FIRST EPSS](#first-epss)** – Predictive scoring system to gauge exploitation likelihood
+- **[NIST NVD](#nist-nvd)** – Comprehensive CVE database maintained by the National Institute of Standards and Technology
 
-**Supported Python Versions**: ELF supports Python 3.8 and above.
+**Supported Python Versions**: 3.11 and above
 
-With ELF, you can:
+ELF helps you:
 
-- Effortlessly query and consolidate vulnerability information.
-- Apply advanced filters, searches, and scoring systems.
-- Validate structured data using Pydantic models.
-- Integrate the resulting insights into dashboards, CI/CD pipelines, and data-driven security workflows.
+- Effortlessly query and consolidate vulnerability information
+- Apply advanced filters, searches, and scoring systems
+- Validate structured data using Pydantic models
+- Integrate insights into dashboards, CI/CD pipelines, and data-driven security workflows
 
-All in a clean, Pythonic, **async-first** interface. If you're new to asynchronous programming in Python, see [asyncio documentation](https://docs.python.org/3/library/asyncio.html).
+All with a clean, Pythonic, **async-first** interface. If you’re new to asynchronous programming in Python, check out the [asyncio documentation](https://docs.python.org/3/library/asyncio.html).
 
 ---
 
@@ -46,7 +46,7 @@ All in a clean, Pythonic, **async-first** interface. If you're new to asynchrono
   - [Quick Start](#quick-start)
   - [Advanced Examples](#advanced-examples)
 - [Attribution and Usage Guidelines](#attribution-and-usage-guidelines)
-- [Special Thanks to Solos](#-special-thanks-to-solos-)
+- [Special Thanks to Solos](#special-thanks-to-solos)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -54,18 +54,26 @@ All in a clean, Pythonic, **async-first** interface. If you're new to asynchrono
 
 ## Features
 
-- ✅ **Query vulnerability data from multiple sources**:
-  - **CISA KEV**: Known Exploited Vulnerabilities catalog.
-  - **FIRST EPSS**: Exploit Prediction Scoring System for prioritization.
-  - **NIST NVD**: National Vulnerability Database for comprehensive CVE details.
-- 🔍 **Advanced filtering and searching**:
-  - Filter by date, CVE, scores, and more.
-- 🛠️ **Pydantic-based data validation**:
-  - Robust validation for structured data handling.
-- 📈 **Pagination and bulk data fetching support**:
-  - Fetch and process large datasets efficiently.
-- 🚀 **Integration-ready**:
-  - Seamlessly integrate into dashboards, CI/CD pipelines, or analytics workflows.
+- ✅ **Query vulnerability data from multiple sources**
+
+  - **CISA KEV**: Known Exploited Vulnerabilities catalog
+  - **FIRST EPSS**: Exploit Prediction Scoring System for prioritization
+  - **NIST NVD**: National Vulnerability Database for comprehensive CVE details
+
+- 🔍 **Advanced filtering and searching**
+
+  - Filter by date, CVE IDs, scores, severity, and more
+
+- 🛠️ **Pydantic-based data validation**
+
+  - Robust validation for structured data handling
+
+- 📈 **Pagination and bulk data fetching**
+
+  - Efficiently process large datasets
+
+- 🚀 **Integration-ready**
+  - Seamlessly integrate into dashboards, CI/CD pipelines, or analytics workflows
 
 ---
 
@@ -91,38 +99,42 @@ uv add elf
 
 ### CISA KEV
 
-The CISA Known Exploited Vulnerabilities (KEV) catalog provides authoritative data on vulnerabilities actively exploited in the wild. ELF allows you to programmatically query this data for integration and analysis.
+The [CISA Known Exploited Vulnerabilities (KEV)](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) catalog provides an authoritative list of vulnerabilities actively exploited in the wild. With ELF, you can programmatically query and analyze these vulnerabilities:
 
 ```python
 from elf import CisaKevApiClient
 
 async with CisaKevApiClient() as client:
     kev_data = await client.get_kev_json()
-    print(f"Total vulnerabilities: {len(kev_data.vulnerabilities)}")
+    print(f"The CISA KEV catalog contains {len(kev_data.vulnerabilities)} actively exploited vulnerabilities.")
 ```
 
 ### FIRST EPSS
 
-FIRST's Exploit Prediction Scoring System (EPSS) predicts the likelihood of a CVE being exploited. ELF provides interfaces for querying EPSS scores.
+The [Exploit Prediction Scoring System (EPSS)](https://www.first.org/epss) predicts the likelihood of a CVE being exploited. ELF offers a straightforward interface to retrieve EPSS scores:
 
 ```python
 from elf import FirstEpssApiClient
 
 async with FirstEpssApiClient() as client:
     epss_scores = await client.get_scores_json(["CVE-2023-1234"])
-    print(epss_scores.data)
+    for score in epss_scores.data:
+        print(f"CVE ID: {score.cve}, EPSS Score: {score.epss}, Percentile: {score.percentile}")
 ```
 
 ### NIST NVD
 
-NIST's National Vulnerability Database offers detailed CVE data. ELF integrates with its API for searching and retrieving CVEs.
+The [National Vulnerability Database (NVD)](https://nvd.nist.gov/) from NIST is among the most comprehensive CVE data sources. ELF integrates natively with the NVD API:
 
 ```python
 from elf import NistNvdApiClient
 
 async with NistNvdApiClient() as client:
     cve_details = await client.get_cve("CVE-2023-1234")
-    print(cve_details)
+    cve = cve_details.vulnerabilities[0].cve
+    print(f"CVE ID: {cve.id}")
+    print(f"Description: {next((desc.value for desc in cve.descriptions if desc.lang == 'en'), 'No description available')}")
+    print(f"Published: {cve.published}, Last Modified: {cve.last_modified}")
 ```
 
 ---
@@ -131,7 +143,7 @@ async with NistNvdApiClient() as client:
 
 ### Quick Start
 
-Here's how to query data from CISA KEV:
+Here’s a simple snippet to fetch CSV data from **CISA KEV**:
 
 ```python
 import asyncio
@@ -139,13 +151,51 @@ from elf import CisaKevApiClient
 
 async def main():
     async with CisaKevApiClient() as client:
-        kev_data = await client.get_kev_csv()
-        print(f"Total vulnerabilities: {len(kev_data)}")
+        kev_csv = await client.get_kev_csv()
+        print(kev_csv)  # Raw CSV data
 
 asyncio.run(main())
 ```
 
 ### Advanced Examples
+
+#### Search and Paginate NIST NVD Data
+
+```python
+import asyncio
+import os
+from datetime import datetime
+
+from elf import NistNvdApiClient
+
+NIST_NVD_API_KEY = os.getenv("NIST_NVD_API_KEY")
+
+
+async def main():
+    async with NistNvdApiClient(api_key=NIST_NVD_API_KEY) as client:
+        generator = client.search_cves(
+            keyword_search="remote code execution",
+            cvss_v3_severity="CRITICAL",
+            results_per_page=5,
+            pub_start_date=datetime(2024, 11, 1),
+            pub_end_date=datetime(2024, 12, 1),
+        )
+
+        async for page in generator:
+            print(f"Processing {len(page.vulnerabilities)} vulnerabilities...")
+            for vuln in page.vulnerabilities:
+                print(f"ID: {vuln.cve.id}")
+                print(
+                    f"Description: {next((d.value for d in vuln.cve.descriptions if d.lang == 'en'), 'No description available')}"
+                )
+                print(
+                    f"CVSS v3 Score: {vuln.cve.metrics.cvss_metric_v31[0].cvss_data.base_score if vuln.cve.metrics and vuln.cve.metrics.cvss_metric_v31 else 'N/A'}"
+                )
+                print("-" * 40)
+
+
+asyncio.run(main())
+```
 
 #### Fetch and Process Paginated CISA KEV Data
 
@@ -161,90 +211,102 @@ async def fetch_paginated_kev_data():
 #### Combine Data from Multiple Sources
 
 ```python
+from elf import CisaKevApiClient, FirstEpssApiClient, NistNvdApiClient
+
+
 async def combine_data_sources():
+    """Combine data from CISA KEV, FIRST EPSS, and NIST NVD."""
     async with (
         CisaKevApiClient() as cisa_client,
         FirstEpssApiClient() as epss_client,
         NistNvdApiClient() as nvd_client,
     ):
+        # Step 1: Fetch vulnerabilities from CISA KEV
         kev_data = await cisa_client.get_kev_json()
+        print(f"Fetched {len(kev_data.vulnerabilities)} vulnerabilities from the CISA KEV catalog.")
+
+        # Step 2: Get EPSS scores for the first 5 vulnerabilities
         epss_scores = await epss_client.get_scores_json(
-            cve_ids=[v.cve_id for v in kev_data.vulnerabilities[0:5]]
+            cve_ids=[v.cve_id for v in kev_data.vulnerabilities[:5]]
         )
+        print(f"Retrieved EPSS scores for {len(epss_scores.data)} CVEs.")
+
+        # Step 3: Fetch NVD details for each CVE and combine insights
         for score in epss_scores.data:
-            print(f"EPSS Score for {score.cve}: {score.epss}")
+            nvd_details = await nvd_client.get_cve(score.cve)
+            nvd_cve = nvd_details.vulnerabilities[0].cve
+
+            print(f"CVE ID: {score.cve}")
+            print(f"EPSS Score: {score.epss}, Percentile: {score.percentile}")
+            print(
+                f"Description: {next((d.value for d in nvd_cve.descriptions if d.lang == 'en'), 'No description available')}"
+            )
+            print(f"Published: {nvd_cve.published}, Last Modified: {nvd_cve.last_modified}")
+            print("-" * 40)
 ```
 
 ---
 
 ## Attribution and Usage Guidelines
 
-When using data from **CISA KEV**, **FIRST EPSS**, or **NIST NVD**, you are required to comply with their respective terms of use, attribution requirements, and usage agreements. Below are the details for each source.
+When using data from **CISA KEV**, **FIRST EPSS**, or **NIST NVD**, you must comply with their respective terms of use, attribution requirements, and usage agreements. Here’s a summary for each source:
 
 ### CISA KEV Attribution and Usage
 
-The [CISA Known Exploited Vulnerabilities (KEV)](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) catalog provides data under the [Creative Commons 0 1.0 License (CC0)](https://creativecommons.org/publicdomain/zero/1.0/).
+The [CISA Known Exploited Vulnerabilities (KEV)](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) are provided under [Creative Commons 0 1.0 License (CC0)](https://creativecommons.org/publicdomain/zero/1.0/).
 
-**Key Requirements**:
+- **Key Requirements**:
 
-- **Free to Use**: Data can be used in any lawful manner.
-- **Restrictions**:
-  - Do not use the CISA logo or DHS seal.
-  - Third-party links in the KEV database are governed by the policies of the linked websites.
+  - **Free to Use**: Data can be used in any lawful manner.
+  - **Restrictions**:
+    - Do not use the CISA logo or DHS seal.
+    - Third-party links in the KEV database are governed by external policies.
 
-**Further Information**:
-
-- [CISA KEV License](https://www.cisa.gov/sites/default/files/licenses/kev/license.txt)
+- **Further Information**:
+  - [CISA KEV License](https://www.cisa.gov/sites/default/files/licenses/kev/license.txt)
 
 ### FIRST EPSS Attribution and Usage
 
-The [Exploit Prediction Scoring System (EPSS)](https://www.first.org/epss) provides predictive scoring to evaluate the likelihood of a CVE being exploited. It is freely available, but certain usage guidelines must be followed.
+The [Exploit Prediction Scoring System (EPSS)](https://www.first.org/epss) provides a predictive score for exploitation likelihood.
 
-**Key Requirements**:
-
-- **Attribution**:
-  - Cite EPSS data as:  
-    _Jay Jacobs, Sasha Romanosky, Benjamin Edwards, Michael Roytman, Idris Adjerid, (2021), Exploit Prediction Scoring System, Digital Threats Research and Practice, 2(3)._
-  - Or: _"See EPSS at https://www.first.org/epss"_
-- **Usage Agreement**:  
-  Follow the [EPSS Usage Guidelines](https://www.first.org/epss/user-guide).
-
-**Further Information**:
-
-- [EPSS Home](https://www.first.org/epss/)
+- **Key Requirements**:
+  - **Attribution**:  
+    Cite EPSS data, e.g.,  
+    _Jay Jacobs, Sasha Romanosky, Benjamin Edwards, Michael Roytman, Idris Adjerid, (2021). Digital Threats Research and Practice, 2(3)._  
+    Or link to [EPSS](https://www.first.org/epss).
+  - **Usage Agreement**:  
+    Follow [EPSS Usage Guidelines](https://www.first.org/epss/user-guide).
 
 ### NIST NVD Attribution and Usage
 
-The [National Vulnerability Database (NVD)](https://nvd.nist.gov/) is a public resource provided by the [National Institute of Standards and Technology (NIST)](https://www.nist.gov).
+The [National Vulnerability Database (NVD)](https://nvd.nist.gov/) is a public resource from [NIST](https://www.nist.gov).
 
-**Key Requirements**:
+- **Key Requirements**:
 
-- **Attribution**:  
-  Services or applications using NVD data must display this notice:
-  > _"This product uses the NVD API but is not endorsed or certified by the NVD."_
-- **Use of NVD Name**:  
-  You may reference the NVD name to identify the data source but **not** to imply endorsement of any product, service, or entity.
+  - **Attribution**:  
+    Display a notice such as:
+    > _"This product uses the NVD API but is not endorsed or certified by the NVD."_
+  - **Use of NVD Name**:
+    - You may reference the “NVD” name to identify the data source but **not** to imply endorsement.
 
-**Further Information**:
-
-- [Getting Started with NVD](https://nvd.nist.gov/developers/start-here)
-- [NVD Terms of Use](https://nvd.nist.gov/developers/terms-of-use)
+- **Further Information**:
+  - [NVD Developers: Start Here](https://nvd.nist.gov/developers/start-here)
+  - [NVD Terms of Use](https://nvd.nist.gov/developers/terms-of-use)
 
 ---
 
 ## Special Thanks to Solos
 
-A heartfelt thank you to [**Solos**](https://github.com/solos) for generously donating the `elf` package name on PyPI.  
-Your contribution helps make this project possible and supports innovation in the Python community!
+A heartfelt thank you to [**Solos**](https://github.com/solos) for donating the `elf` package name on PyPI. Your generosity helps make this project possible and supports innovation in the Python community!
 
 ---
 
 ## Contributing
 
-We welcome contributions! Please check out the [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to get started. Issues and PRs are greatly appreciated.
+We welcome contributions! Issues and PRs are greatly appreciated—feel free to jump in and help make ELF even better.
 
 ---
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the [MIT License](LICENSE). See the [LICENSE](LICENSE) file for details.
