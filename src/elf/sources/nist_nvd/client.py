@@ -129,6 +129,9 @@ class NistNvdApiClient(BaseApiClient):
             ApiClientError: If the response format is unknown or validation fails.
 
         """
+        # Keep a snippet of the response text for debugging if unexpected data occurs
+        raw_text_snippet = response.text[:500]
+
         try:
             data = response.json()
             if "vulnerabilities" in data:
@@ -138,17 +141,29 @@ class NistNvdApiClient(BaseApiClient):
             else:
                 self.logger.error(
                     "Unknown response format",
-                    extra={"response_keys": list(data.keys())},
+                    extra={
+                        "response_keys": list(data.keys()),
+                        "raw_response_snippet": raw_text_snippet,
+                    },
                 )
                 raise ApiClientError("Unknown response format from NVD API.")
         except ValidationError as e:
             self.logger.error(
                 "Validation error while parsing NVD response",
-                extra={"error": e.json()},
+                extra={
+                    "errors": e.errors(),
+                    "raw_response_snippet": raw_text_snippet,
+                },
             )
             raise ApiClientError("Invalid data received from NVD API") from e
         except ValueError as e:
-            self.logger.error("JSON decoding error", extra={"error": str(e)})
+            self.logger.error(
+                "JSON decoding error",
+                extra={
+                    "error": str(e),
+                    "raw_response_snippet": raw_text_snippet,
+                },
+            )
             raise ApiClientError("Failed to decode JSON response") from e
 
     async def _request(
@@ -199,6 +214,11 @@ class NistNvdApiClient(BaseApiClient):
 
         Raises:
             ApiClientError: If parsing or retrieval fails.
+
+        Example:
+            >>> async with NistNvdApiClient(api_key="YOUR_API_KEY") as client:
+            ...     cve_data = await client.get_cve("CVE-2021-34527")
+            ...     print(cve_data.vulnerabilities[0].cve.id)
 
         """
         endpoint = "/cves/2.0"
@@ -329,7 +349,8 @@ class NistNvdApiClient(BaseApiClient):
         _set_param("hasKev", "true" if has_kev else "false" if has_kev is False else None)
         _set_param("hasOval", "true" if has_oval else "false" if has_oval is False else None)
         _set_param(
-            "isVulnerable", "true" if is_vulnerable else "false" if is_vulnerable is False else None
+            "isVulnerable",
+            "true" if is_vulnerable else "false" if is_vulnerable is False else None,
         )
         _set_param(
             "keywordExactMatch",

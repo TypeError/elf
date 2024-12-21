@@ -43,6 +43,9 @@ from elf.core.exceptions import (
 
 R = TypeVar("R", bound=BaseModel)
 
+# Commonly retryable status codes indicating transient server errors
+RETRYABLE_STATUS_CODES = {500, 502, 503, 504}
+
 
 class BaseApiClient(ABC):
     """Abstract base class for API clients providing a common framework.
@@ -92,13 +95,9 @@ class BaseApiClient(ABC):
         self.retries = retries
         self.backoff_factor = backoff_factor
 
+        # Obtain (but do not forcibly configure) a logger.
+        # Users are expected to configure logging themselves if they wish.
         self.logger = logging.getLogger(self.__class__.__name__)
-        if not self.logger.hasHandlers():
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-            handler.setFormatter(formatter)
-            self.logger.addHandler(handler)
-            self.logger.setLevel(logging.DEBUG)
 
         self.client = client or AsyncClient(
             base_url=self.base_url,
@@ -196,8 +195,14 @@ class BaseApiClient(ABC):
                 return response
 
             except HTTPStatusError as e:
+                # Only retry on typical transient errors (5xx)
+                if e.response.status_code not in RETRYABLE_STATUS_CODES:
+                    self._handle_http_status_error(e, method, url, attempt)
+                    raise ApiClientHTTPError(e.response.status_code, e.response.text) from e
+
                 self._handle_http_status_error(e, method, url, attempt)
                 if attempt == self.retries:
+                    # Final attempt failed
                     raise ApiClientHTTPError(e.response.status_code, e.response.text) from e
 
             except TimeoutException as e:
@@ -211,15 +216,17 @@ class BaseApiClient(ABC):
                     raise ApiClientNetworkError("Network error occurred") from e
 
             except ValueError as e:
+                # Typically indicates JSON decoding or data conversion issue
                 self._handle_value_error(e, method, url)
-                raise ApiClientError(str(e)) from e
+                raise ApiClientError(f"Value error during request: {str(e)}") from e
 
             # Exponential backoff before the next attempt
             sleep_time = self.backoff_factor * (2 ** (attempt - 1))
-            self.logger.debug(f"Retrying request in {sleep_time:.2f} seconds...")
+            self.logger.debug(f"Attempt {attempt} failed; retrying in {sleep_time:.2f} seconds...")
             await asyncio.sleep(sleep_time)
 
-        # If all attempts fail, raise a generic client error
+        # If all attempts somehow fall through without returning or raising,
+        # raise a generic error (should rarely happen in practice).
         raise ApiClientError("Failed to obtain a valid response after all retries")
 
     def _prepare_headers(
@@ -289,7 +296,7 @@ class BaseApiClient(ABC):
                 "method": method,
                 "url": url,
                 "status_code": e.response.status_code,
-                "text": e.response.text,
+                "text": e.response.text[:500],  # Log only part of body if large
                 "attempt": attempt,
             },
         )
@@ -321,7 +328,7 @@ class BaseApiClient(ABC):
         )
 
     def _handle_value_error(self, e: ValueError, method: str, url: str) -> None:
-        """Handle and log ValueErrors (e.g. JSON parse errors)."""
+        """Handle and log ValueErrors (e.g., JSON parse errors)."""
         self.logger.error(
             "Value error occurred while processing the response",
             extra={"error": str(e), "method": method, "url": url},
@@ -347,12 +354,12 @@ class BaseApiClient(ABC):
         except ValidationError as e:
             self.logger.error(
                 "Validation error occurred while parsing response",
-                extra={"error": e.json()},
+                extra={"error": e.errors(), "raw_response": response.text[:500]},
             )
             raise ApiClientError("Invalid data received from API") from e
         except ValueError as e:
             self.logger.error(
                 "JSON decoding error occurred",
-                extra={"error": str(e)},
+                extra={"error": str(e), "raw_response": response.text[:500]},
             )
             raise ApiClientError("Failed to decode JSON response") from e

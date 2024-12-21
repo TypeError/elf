@@ -123,12 +123,15 @@ class FirstEpssApiClient(BaseApiClient):
             ApiClientDataError: If validation fails or the response is malformed.
 
         """
+        # Capture a small snippet of the raw response for troubleshooting if needed
+        raw_text_snippet = response.text[:500]
+
         try:
             return await self._handle_response(response, FirstEpssScoreResponse)
         except ApiClientDataError as e:
             self.logger.error(
                 "Validation error while parsing EPSS JSON response",
-                extra={"error": str(e)},
+                extra={"error": str(e), "raw_response_snippet": raw_text_snippet},
             )
             raise
 
@@ -177,7 +180,7 @@ class FirstEpssApiClient(BaseApiClient):
         elif cve_id:
             params["cve"] = cve_id
 
-        # Only create a request model if any of the filtering fields are provided
+        # Only create a request model if any filtering fields are provided
         if any([date, days, epss_gt, epss_lt, percentile_gt, percentile_lt, q, order, scope]):
             request_params = BaseRequestParams(
                 date=date,

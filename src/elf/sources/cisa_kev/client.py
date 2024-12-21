@@ -34,7 +34,6 @@ Example:
 
 from __future__ import annotations
 
-import logging
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -86,7 +85,6 @@ class CisaKevApiClient(BaseApiClient):
             retries=retries,
             backoff_factor=backoff_factor,
         )
-        self.logger: logging.Logger = self.logger
 
     async def _parse_response(self, response: httpx.Response) -> CisaKevCatalog:
         """Parse a HTTPX response into a `CisaKevCatalog` model.
@@ -101,17 +99,23 @@ class CisaKevApiClient(BaseApiClient):
             ApiClientError: If the response data is invalid or cannot be parsed.
 
         """
+        # Store a truncated copy of the response text for logging (just in case).
+        raw_text_snippet = response.text[:500]
+
         try:
             data: Any = response.json()
             return CisaKevCatalog.model_validate(data)
         except ValidationError as e:
             self.logger.error(
                 "Validation error while parsing KEV response",
-                extra={"error": e.json()},
+                extra={"errors": e.errors(), "raw_response": raw_text_snippet},
             )
             raise ApiClientError("Invalid data received from the CISA KEV API") from e
         except ValueError as e:
-            self.logger.error("JSON decoding error", extra={"error": str(e)})
+            self.logger.error(
+                "JSON decoding error",
+                extra={"error": str(e), "raw_response": raw_text_snippet},
+            )
             raise ApiClientError("Failed to decode JSON response") from e
 
     async def get_kev_json(self) -> CisaKevCatalog:
