@@ -458,7 +458,6 @@ class FirstEpssApiClient(BaseApiClient):
             percentile_lt: Maximum percentile threshold.
             q: A query string for advanced filtering.
             order: Specify result ordering.
-            scope: Define the query scope (e.g., "time-series").
 
         Returns:
             A `FirstEpssScoreResponse` with recent EPSS scores.
