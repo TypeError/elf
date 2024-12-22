@@ -7,6 +7,7 @@ EPSS provides probability-based exploit predictions for CVEs, helping security t
 assess risk and prioritize vulnerabilities more efficiently.
 
 Classes:
+    - TimeSeriesEntry: Represents a single time-series entry for a CVE's EPSS score over time.
     - EpssScoreItem: Represents a single CVE score entry, including its EPSS score and percentile.
     - FirstEpssScoreResponse: Encapsulates an API response containing multiple `EpssScoreItem` records.
 
@@ -33,9 +34,45 @@ Typical usage example:
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from enum import Enum
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, field_validator
+
+
+class AccessLevel(str, Enum):
+    """Enumeration for access levels in the EPSS API response."""
+
+    PUBLIC = "public"
+    PRIVATE = "private, no-cache"
+
+
+class ResponseStatus(str, Enum):
+    """Enumeration for response statuses in the EPSS API response."""
+
+    OK = "OK"
+    ERROR = "ERROR"
+
+
+class TimeSeriesEntry(BaseModel):
+    """Model for a single time-series entry in EPSS data."""
+
+    epss: Annotated[float, Field(ge=0.0, le=1.0, description="EPSS score (0.0 to 1.0).")]
+    percentile: Annotated[
+        float, Field(ge=0.0, le=100.0, description="Percentile rank (0.0 to 100.0).")
+    ]
+    date: datetime = Field(..., description="Date of the EPSS score entry.")
+
+    @field_validator("date", mode="before")
+    @classmethod
+    def parse_date(cls, value: str | datetime) -> datetime:
+        """Ensure the date is a valid datetime object."""
+        if isinstance(value, datetime):
+            return value
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            raise ValueError("Invalid date format, expected ISO 8601 string") from None
 
 
 class EpssScoreItem(BaseModel):
@@ -49,13 +86,14 @@ class EpssScoreItem(BaseModel):
         epss (float): The EPSS score, a probability in the range [0.0, 1.0].
         percentile (float): The percentile rank of this CVE's EPSS score in the range [0.0, 100.0].
         date (datetime): The UTC timestamp when this EPSS score was calculated.
+        time_series (Optional[list[TimeSeriesEntry]]): Time-series data if `scope="time-series"` is used.
 
     Example:
         >>> item = EpssScoreItem(
         ...     cve="CVE-2021-34527",
         ...     epss=0.42,
         ...     percentile=75.0,
-        ...     date="2023-09-01T00:00:00Z"
+        ...     date=datetime.strptime("2023-09-01T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ")
         ... )
         >>> print(item.cve, item.epss, item.percentile, item.date)
 
@@ -74,6 +112,9 @@ class EpssScoreItem(BaseModel):
     date: datetime = Field(
         ..., description="UTC timestamp indicating when the EPSS score was calculated."
     )
+    time_series: list[TimeSeriesEntry] | None = Field(
+        None, description="Time-series data for the CVE if requested.", alias="time-series"
+    )
 
     @field_validator("cve", mode="after")
     @classmethod
@@ -86,7 +127,7 @@ class EpssScoreItem(BaseModel):
         """
         import re
 
-        if not re.match(r"^CVE-\d{4}-\d{4,}$", v):
+        if not re.match(r"^CVE-\d{4}-\d{4,}$", v, re.IGNORECASE):
             raise ValueError("CVE ID must follow the format 'CVE-YYYY-NNNN'")
         return v.upper()
 
@@ -112,7 +153,7 @@ class FirstEpssScoreResponse(BaseModel):
             Filter the EPSS data by a minimum threshold on the specified attribute ("epss" or "percentile").
 
         sorted_data(keys: list[Literal["epss", "percentile"]] | None, reverse: bool) -> list[EpssScoreItem]:
-            Sort the data by given attributes (e.g. "epss" or "percentile"). Defaults to sorting by "epss" descending.
+            Sort the data by given attributes (e.g., "epss" or "percentile"). Defaults to sorting by "epss" descending.
 
     Example:
         >>> response = FirstEpssScoreResponse.parse_obj(api_response)
@@ -121,20 +162,14 @@ class FirstEpssScoreResponse(BaseModel):
 
     """
 
-    status: Literal["OK", "ERROR"] = Field(
-        ..., description="Status of the EPSS API response (OK or ERROR)."
-    )
-    status_code: int = Field(
-        ..., alias="status-code", description="HTTP status code of the response."
-    )
+    status: ResponseStatus = Field(..., description="Status of the EPSS API response.")
+    status_code: int = Field(..., alias="status-code", description="HTTP status code.")
     version: str = Field(..., description="Version of the EPSS API.")
-    access: Literal["public", "private, no-cache"] = Field(
-        ..., description="Cache directive for the response data."
-    )
-    total: int = Field(..., description="Total number of available EPSS records.")
-    offset: int = Field(..., description="Starting index of returned records.")
-    limit: int = Field(..., description="Maximum number of records returned in this response.")
-    data: list[EpssScoreItem] = Field(..., description="List of EPSS scores for various CVEs.")
+    access: AccessLevel = Field(..., description="Access level of the API response.")
+    total: int = Field(..., description="Total number of records available.")
+    offset: int = Field(..., description="Starting offset for records.")
+    limit: int = Field(..., description="Maximum number of records returned.")
+    data: list[EpssScoreItem] = Field(..., description="List of CVE EPSS scores.")
 
     def filter_data(
         self, threshold: float, key: Literal["epss", "percentile"] = "epss"
@@ -142,11 +177,11 @@ class FirstEpssScoreResponse(BaseModel):
         """Filter `data` items by a specified attribute threshold.
 
         Args:
-            threshold: Minimum value for the attribute filter.
-            key: Attribute to filter by, either "epss" or "percentile". Defaults to "epss".
+            threshold (float): Minimum value for the attribute filter.
+            key (Literal["epss", "percentile"], optional): Attribute to filter by, either "epss" or "percentile". Defaults to "epss".
 
         Returns:
-            A list of EpssScoreItem objects exceeding the threshold.
+            list[EpssScoreItem]: A list of EpssScoreItem objects exceeding the threshold.
 
         Raises:
             ValueError: If an unsupported key is provided.
@@ -164,11 +199,11 @@ class FirstEpssScoreResponse(BaseModel):
         """Sort the EPSS `data` list by one or more attributes.
 
         Args:
-            keys: Attributes to sort by (e.g., ["epss", "percentile"]). Defaults to ["epss"] if not provided.
-            reverse: Whether to sort in descending order. Defaults to True.
+            keys (Optional[list[Literal["epss", "percentile"]]], optional): Attributes to sort by (e.g., ["epss", "percentile"]). Defaults to ["epss"] if not provided.
+            reverse (bool, optional): Whether to sort in descending order. Defaults to True.
 
         Returns:
-            A list of EpssScoreItem objects sorted by the specified attributes.
+            list[EpssScoreItem]: A list of EpssScoreItem objects sorted by the specified attributes.
 
         Raises:
             ValueError: If unsupported keys are provided.
