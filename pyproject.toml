@@ -5,7 +5,7 @@ description = "A Python library for integrating and analyzing vulnerability data
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "cak", email = "cak@typeerror.com" }]
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = ["httpx>=0.28.0", "pydantic>=2.10.2"]
 keywords = [
     "vulnerability management",
@@ -18,7 +18,7 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.10",
     "Topic :: Security",
 ]
 
@@ -33,7 +33,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py310"
 select = [
     "ANN", # Type annotation rules
     "B",   # Best practices
