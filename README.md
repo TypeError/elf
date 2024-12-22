@@ -21,7 +21,7 @@
 - **[FIRST EPSS](#first-epss)** – Predictive scoring system to gauge exploitation likelihood
 - **[NIST NVD](#nist-nvd)** – Comprehensive CVE database maintained by the National Institute of Standards and Technology
 
-**Supported Python Versions**: 3.11 and above
+**Supported Python Versions**: 3.10 and above
 
 ELF helps you:
 
@@ -43,8 +43,9 @@ All with a clean, Pythonic, **async-first** interface. If you’re new to asynch
   - [FIRST EPSS](#first-epss)
   - [NIST NVD](#nist-nvd)
 - [Usage](#usage)
-  - [Quick Start](#quick-start)
-  - [Advanced Examples](#advanced-examples)
+  - [CISA KEV Examples](#cisa-kev-examples)
+  - [FIRST EPSS Examples](#first-epss-examples)
+  - [NIST NVD Examples](#nist-nvd-examples)
 - [Attribution and Usage Guidelines](#attribution-and-usage-guidelines)
 - [Special Thanks to Solos](#special-thanks-to-solos)
 - [Contributing](#contributing)
@@ -99,214 +100,188 @@ uv add elf
 
 ### CISA KEV
 
-The [CISA Known Exploited Vulnerabilities (KEV)](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) catalog provides an authoritative list of vulnerabilities actively exploited in the wild. With ELF, you can programmatically query and analyze these vulnerabilities:
-
-```python
-from elf import CisaKevApiClient
-
-async with CisaKevApiClient() as client:
-    kev_data = await client.get_kev_json()
-    print(f"The CISA KEV catalog contains {len(kev_data.vulnerabilities)} actively exploited vulnerabilities.")
-```
+The [CISA Known Exploited Vulnerabilities (KEV)](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) catalog provides an authoritative list of vulnerabilities actively exploited in the wild. ELF enables seamless programmatic access to these datasets.
 
 ### FIRST EPSS
 
-The [Exploit Prediction Scoring System (EPSS)](https://www.first.org/epss) predicts the likelihood of a CVE being exploited. ELF offers a straightforward interface to retrieve EPSS scores:
-
-```python
-from elf import FirstEpssApiClient
-
-async with FirstEpssApiClient() as client:
-    epss_scores = await client.get_scores_json(["CVE-2023-1234"])
-    for score in epss_scores.data:
-        print(f"CVE ID: {score.cve}, EPSS Score: {score.epss}, Percentile: {score.percentile}")
-```
+The [Exploit Prediction Scoring System (EPSS)](https://www.first.org/epss) predicts the likelihood of a CVE being exploited. ELF offers interfaces for JSON and CSV retrievals, along with time-series data.
 
 ### NIST NVD
 
-The [National Vulnerability Database (NVD)](https://nvd.nist.gov/) from NIST is among the most comprehensive CVE data sources. ELF integrates natively with the NVD API:
-
-```python
-from elf import NistNvdApiClient
-
-async with NistNvdApiClient() as client:
-    cve_details = await client.get_cve("CVE-2023-1234")
-    cve = cve_details.vulnerabilities[0].cve
-    print(f"CVE ID: {cve.id}")
-    print(f"Description: {next((desc.value for desc in cve.descriptions if desc.lang == 'en'), 'No description available')}")
-    print(f"Published: {cve.published}, Last Modified: {cve.last_modified}")
-```
+The [National Vulnerability Database (NVD)](https://nvd.nist.gov/) from NIST is among the most comprehensive CVE data sources. ELF integrates with NVD for CVE details, search functionality, and change history.
 
 ---
 
 ## Usage
 
-### Quick Start
-
-Here’s a simple snippet to fetch CSV data from **CISA KEV**:
+### CISA KEV Examples
 
 ```python
 import asyncio
 from elf import CisaKevApiClient
 
-async def main():
+# Fetch all vulnerabilities in JSON format
+async def fetch_all_vulnerabilities():
+    async with CisaKevApiClient() as client:
+        kev_data = await client.get_kev_json()
+        print(f"Catalog Title: {kev_data.catalog_version}")
+        print(f"Total Vulnerabilities: {kev_data.count}")
+
+# Fetch vulnerabilities as raw CSV
+async def fetch_vulnerabilities_csv():
     async with CisaKevApiClient() as client:
         kev_csv = await client.get_kev_csv()
-        print(kev_csv)  # Raw CSV data
+        with open("kev_data.csv", "wb") as file:
+            file.write(kev_csv)
+        print("CSV data saved as kev_data.csv")
+
+# Fetch paginated data
+async def fetch_paginated_vulnerabilities():
+    async with CisaKevApiClient() as client:
+        async for chunk in client.get_kev_json_paginated(chunk_size=500):
+            print(f"Fetched {len(chunk.vulnerabilities)} vulnerabilities in this chunk.")
+
+# Run examples
+async def main():
+    await fetch_all_vulnerabilities()
+    await fetch_vulnerabilities_csv()
+    await fetch_paginated_vulnerabilities()
 
 asyncio.run(main())
 ```
 
-### Advanced Examples
+---
 
-#### Search and Paginate NIST NVD Data
+### FIRST EPSS Examples
+
+```python
+import asyncio
+from elf import FirstEpssApiClient
+
+# Retrieve EPSS scores for specific CVEs
+async def fetch_epss_scores():
+    async with FirstEpssApiClient() as client:
+        scores = await client.get_scores_json(["CVE-2023-1234", "CVE-2023-5678"])
+        for score in scores.data:
+            print(f"CVE: {score.cve}, Score: {score.epss}, Percentile: {score.percentile}")
+
+# Download full EPSS CSV for a specific date
+async def download_full_csv():
+    async with FirstEpssApiClient() as client:
+        csv_data = await client.download_and_decompress_full_csv_for_date("2023-12-01")
+        with open("epss_data.csv", "w") as file:
+            file.write(csv_data)
+        print("Decompressed CSV saved as epss_data.csv")
+
+# Paginate EPSS data
+async def fetch_paginated_epss_scores():
+    async with FirstEpssApiClient() as client:
+        async for page in client.get_scores_paginated_json(limit_per_request=100, max_records=500):
+            for record in page.data:
+                print(f"CVE: {record.cve}, Score: {record.epss}")
+
+# Run examples
+async def main():
+    await fetch_epss_scores()
+    await download_full_csv()
+    await fetch_paginated_epss_scores()
+
+asyncio.run(main())
+```
+
+---
+
+### NIST NVD Examples
 
 ```python
 import asyncio
 import os
 from datetime import datetime
-
-from elf import NistNvdApiClient
+from elf.core.exceptions import ApiClientError
+from elf.sources.nist_nvd.client import NistNvdApiClient
 
 NIST_NVD_API_KEY = os.getenv("NIST_NVD_API_KEY")
 
-
-async def main():
+# Fetch details for a specific CVE
+async def fetch_cve_details():
     async with NistNvdApiClient(api_key=NIST_NVD_API_KEY) as client:
-        generator = client.search_cves(
-            keyword_search="remote code execution",
-            cvss_v3_severity="CRITICAL",
-            results_per_page=5,
-            pub_start_date=datetime(2024, 11, 1),
-            pub_end_date=datetime(2024, 12, 1),
-        )
+        cve_data = await client.get_cve("CVE-2021-34527")
+        print(f"CVE ID: {cve_data.vulnerabilities[0].cve.id}")
+        print(f"Description: {cve_data.vulnerabilities[0].cve.descriptions[0].value}")
 
-        async for page in generator:
-            print(f"Processing {len(page.vulnerabilities)} vulnerabilities...")
-            for vuln in page.vulnerabilities:
-                print(f"ID: {vuln.cve.id}")
-                print(
-                    f"Description: {next((d.value for d in vuln.cve.descriptions if d.lang == 'en'), 'No description available')}"
-                )
-                print(
-                    f"CVSS v3 Score: {vuln.cve.metrics.cvss_metric_v31[0].cvss_data.base_score if vuln.cve.metrics and vuln.cve.metrics.cvss_metric_v31 else 'N/A'}"
-                )
-                print("-" * 40)
+# Search CVEs with filters
+async def search_cves():
+    try:
+        async with NistNvdApiClient(api_key=NIST_NVD_API_KEY) as client:
+            async for page in client.search_cves(
+                cpe_name="cpe:2.3:o:microsoft:windows",
+                cvss_v3_severity="HIGH",
+                pub_start_date=datetime(2023, 1, 1),
+                pub_end_date=datetime(2023, 12, 31),
+            ):
+                if not page.vulnerabilities:
+                    print("No vulnerabilities found for this query.")
+                    return
+                for vuln in page.vulnerabilities:
+                    print(f"CVE ID: {vuln.cve.id}, Published: {vuln.cve.published}")
+    except ApiClientError as e:
+        print(f"Error during CVE search: {e}")
 
+# Retrieve CVE change history
+async def fetch_cve_history():
+    try:
+        async with NistNvdApiClient(api_key=NIST_NVD_API_KEY) as client:
+            async for page in client.get_cve_history_paginated(
+                cve_id="CVE-2021-34527",
+                change_start_date=datetime(2023, 1, 1),
+                change_end_date=datetime(2023, 6, 1),
+            ):
+                if not page.cve_changes:
+                    print("No changes found for this CVE.")
+                    return
+                print(page.cve_changes)
+    except ApiClientError as e:
+        print(f"Error during CVE history fetch: {e}")
+
+# Run examples
+async def main():
+    await fetch_cve_details()
+    await search_cves()
+    await fetch_cve_history()
 
 asyncio.run(main())
-```
-
-#### Fetch and Process Paginated CISA KEV Data
-
-```python
-from elf import CisaKevApiClient
-
-async def fetch_paginated_kev_data():
-    async with CisaKevApiClient() as client:
-        async for kev_chunk in client.get_kev_json_paginated(chunk_size=500):
-            print(f"Processing {len(kev_chunk.vulnerabilities)} vulnerabilities")
-```
-
-#### Combine Data from Multiple Sources
-
-```python
-from elf import CisaKevApiClient, FirstEpssApiClient, NistNvdApiClient
-
-
-async def combine_data_sources():
-    """Combine data from CISA KEV, FIRST EPSS, and NIST NVD."""
-    async with (
-        CisaKevApiClient() as cisa_client,
-        FirstEpssApiClient() as epss_client,
-        NistNvdApiClient() as nvd_client,
-    ):
-        # Step 1: Fetch vulnerabilities from CISA KEV
-        kev_data = await cisa_client.get_kev_json()
-        print(f"Fetched {len(kev_data.vulnerabilities)} vulnerabilities from the CISA KEV catalog.")
-
-        # Step 2: Get EPSS scores for the first 5 vulnerabilities
-        epss_scores = await epss_client.get_scores_json(
-            cve_ids=[v.cve_id for v in kev_data.vulnerabilities[:5]]
-        )
-        print(f"Retrieved EPSS scores for {len(epss_scores.data)} CVEs.")
-
-        # Step 3: Fetch NVD details for each CVE and combine insights
-        for score in epss_scores.data:
-            nvd_details = await nvd_client.get_cve(score.cve)
-            nvd_cve = nvd_details.vulnerabilities[0].cve
-
-            print(f"CVE ID: {score.cve}")
-            print(f"EPSS Score: {score.epss}, Percentile: {score.percentile}")
-            print(
-                f"Description: {next((d.value for d in nvd_cve.descriptions if d.lang == 'en'), 'No description available')}"
-            )
-            print(f"Published: {nvd_cve.published}, Last Modified: {nvd_cve.last_modified}")
-            print("-" * 40)
 ```
 
 ---
 
 ## Attribution and Usage Guidelines
 
-When using data from **CISA KEV**, **FIRST EPSS**, or **NIST NVD**, you must comply with their respective terms of use, attribution requirements, and usage agreements. Here’s a summary for each source:
+### CISA KEV
 
-### CISA KEV Attribution and Usage
+Data provided under the [Creative Commons 0 1.0 License (CC0)](https://creativecommons.org/publicdomain/zero/1.0/).
 
-The [CISA Known Exploited Vulnerabilities (KEV)](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) are provided under [Creative Commons 0 1.0 License (CC0)](https://creativecommons.org/publicdomain/zero/1.0/).
+### FIRST EPSS
 
-- **Key Requirements**:
+Usage must adhere to the [FIRST EPSS Usage Guidelines](https://www.first.org/epss/user-guide).
 
-  - **Free to Use**: Data can be used in any lawful manner.
-  - **Restrictions**:
-    - Do not use the CISA logo or DHS seal.
-    - Third-party links in the KEV database are governed by external policies.
+### NIST NVD
 
-- **Further Information**:
-  - [CISA KEV License](https://www.cisa.gov/sites/default/files/licenses/kev/license.txt)
-
-### FIRST EPSS Attribution and Usage
-
-The [Exploit Prediction Scoring System (EPSS)](https://www.first.org/epss) provides a predictive score for exploitation likelihood.
-
-- **Key Requirements**:
-  - **Attribution**:  
-    Cite EPSS data, e.g.,  
-    _Jay Jacobs, Sasha Romanosky, Benjamin Edwards, Michael Roytman, Idris Adjerid, (2021). Digital Threats Research and Practice, 2(3)._  
-    Or link to [EPSS](https://www.first.org/epss).
-  - **Usage Agreement**:  
-    Follow [EPSS Usage Guidelines](https://www.first.org/epss/user-guide).
-
-### NIST NVD Attribution and Usage
-
-The [National Vulnerability Database (NVD)](https://nvd.nist.gov/) is a public resource from [NIST](https://www.nist.gov).
-
-- **Key Requirements**:
-
-  - **Attribution**:  
-    Display a notice such as:
-    > _"This product uses the NVD API but is not endorsed or certified by the NVD."_
-  - **Use of NVD Name**:
-    - You may reference the “NVD” name to identify the data source but **not** to imply endorsement.
-
-- **Further Information**:
-  - [NVD Developers: Start Here](https://nvd.nist.gov/developers/start-here)
-  - [NVD Terms of Use](https://nvd.nist.gov/developers/terms-of-use)
+Data usage is governed by the [NIST Terms of Use](https://nvd.nist.gov/developers/terms-of-use).
 
 ---
 
 ## Special Thanks to Solos
 
-A heartfelt thank you to [**Solos**](https://github.com/solos) for donating the `elf` package name on PyPI. Your generosity helps make this project possible and supports innovation in the Python community!
+Special thanks to [Solos](https://github.com/solos) for donating the `elf` package name on PyPI.
 
 ---
 
 ## Contributing
 
-We welcome contributions! Issues and PRs are greatly appreciated—feel free to jump in and help make ELF even better.
+Contributions are welcome! Please [open an issue](https://github.com/TypeError/elf/issues) or submit a [pull request](https://github.com/TypeError/elf/pulls) for new features or bug fixes. For detailed guidelines, refer to our [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE). See the [LICENSE](LICENSE) file for details.
+This project is licensed under the [MIT License](LICENSE).
