@@ -206,10 +206,12 @@ asyncio.run(main())
 import asyncio
 import os
 from datetime import datetime
+
 from elf.core.exceptions import ApiClientError
 from elf.sources.nist_nvd.client import NistNvdApiClient
 
 NIST_NVD_API_KEY = os.getenv("NIST_NVD_API_KEY")
+
 
 # Fetch details for a specific CVE
 async def fetch_cve_details():
@@ -218,15 +220,16 @@ async def fetch_cve_details():
         print(f"CVE ID: {cve_data.vulnerabilities[0].cve.id}")
         print(f"Description: {cve_data.vulnerabilities[0].cve.descriptions[0].value}")
 
+
 # Search CVEs with filters
 async def search_cves():
     try:
         async with NistNvdApiClient(api_key=NIST_NVD_API_KEY) as client:
             async for page in client.search_cves(
-                cpe_name="cpe:2.3:o:microsoft:windows",
+                cpe_name="cpe:2.3:o:microsoft:windows:-:*:*:*:*:*:*:*",
                 cvss_v3_severity="HIGH",
-                pub_start_date=datetime(2023, 1, 1),
-                pub_end_date=datetime(2023, 12, 31),
+                pub_start_date=datetime(2016, 3, 1),
+                pub_end_date=datetime(2016, 3, 12),
             ):
                 if not page.vulnerabilities:
                     print("No vulnerabilities found for this query.")
@@ -235,6 +238,7 @@ async def search_cves():
                     print(f"CVE ID: {vuln.cve.id}, Published: {vuln.cve.published}")
     except ApiClientError as e:
         print(f"Error during CVE search: {e}")
+
 
 # Retrieve CVE change history
 async def fetch_cve_history():
@@ -252,11 +256,13 @@ async def fetch_cve_history():
     except ApiClientError as e:
         print(f"Error during CVE history fetch: {e}")
 
+
 # Run examples
 async def main():
-    await fetch_cve_details()
+    # await fetch_cve_details()
     await search_cves()
-    await fetch_cve_history()
+    # await fetch_cve_history()
+
 
 asyncio.run(main())
 ```
