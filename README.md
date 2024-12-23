@@ -156,7 +156,7 @@ asyncio.run(main())
 
 ```python
 import asyncio
-from elf import FirstEpssApiClient
+from elf import FirstEpssApiClient, FirstEpssOrderOption
 
 # Retrieve EPSS scores for specific CVEs
 async def fetch_epss_scores():
@@ -173,6 +173,14 @@ async def download_full_csv():
             file.write(csv_data)
         print("Decompressed CSV saved as epss_data.csv")
 
+# Fetch the highest EPSS scores
+async def fetch_highest_epss_scores():
+    async with FirstEpssApiClient() as client:
+        response = await client.get_cves(order=FirstEpssOrderOption.EPSS_DESC, limit=5)
+        print("Top 5 CVEs with the highest EPSS scores:")
+        for item in response.data:
+            print(f"CVE: {item.cve}, EPSS: {item.epss}, Percentile: {item.percentile}")
+
 # Paginate EPSS data
 async def fetch_paginated_epss_scores():
     async with FirstEpssApiClient() as client:
@@ -184,6 +192,7 @@ async def fetch_paginated_epss_scores():
 async def main():
     await fetch_epss_scores()
     await download_full_csv()
+    await fetch_highest_epss_scores()
     await fetch_paginated_epss_scores()
 
 asyncio.run(main())
@@ -258,7 +267,7 @@ asyncio.run(main())
 
 ### CISA KEV
 
-Data provided under the [Creative Commons 0 1.0 License (CC0)](https://creativecommons.org/publicdomain/zero/1.0/).
+Data provided under the [Creative Commons 0 1.0 License (CC0)](https://www.cisa.gov/sites/default/files/licenses/kev/license.txt).
 
 ### FIRST EPSS
 
@@ -278,7 +287,7 @@ Special thanks to [Solos](https://github.com/solos) for donating the `elf` packa
 
 ## Contributing
 
-Contributions are welcome! Please [open an issue](https://github.com/TypeError/elf/issues) or submit a [pull request](https://github.com/TypeError/elf/pulls) for new features or bug fixes. For detailed guidelines, refer to our [CONTRIBUTING.md](CONTRIBUTING.md).
+Contributions are welcome! Please [open an issue](https://github.com/TypeError/elf/issues) or submit a [pull request](https://github.com/TypeError/elf/pulls) for new features or bug fixes.
 
 ---
 
