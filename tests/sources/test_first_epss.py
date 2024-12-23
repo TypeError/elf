@@ -1,6 +1,5 @@
-# type: ignore
 import pytest
-from elf import FirstEpssApiClient
+from elf import FirstEpssApiClient, FirstEpssOrderOption
 from datetime import datetime
 
 @pytest.mark.asyncio
@@ -38,7 +37,7 @@ async def test_epss_time_series_cve():
 async def test_epss_highest_scoring_cves():
     """Test fetching top CVEs with the highest EPSS scores."""
     async with FirstEpssApiClient() as client:
-        response = await client.get_cves(order="!epss", limit=5)
+        response = await client.get_cves(order=FirstEpssOrderOption.EPSS_DESC, limit=5)
         assert response.status == "OK", "API status is not OK"
         assert len(response.data) == 5, "Unexpected number of CVEs returned"
 
@@ -55,7 +54,7 @@ async def test_epss_combined_filters_advanced():
     """Test combined filters with date, EPSS threshold, and ordering."""
     async with FirstEpssApiClient() as client:
         response = await client.get_cves(
-            date="2022-03-05", epss_gt=0.95, order="!epss", limit=5
+            date="2022-03-05", epss_gt=0.95, order=FirstEpssOrderOption.EPSS_DESC, limit=5
         )
         assert response.status == "OK", "API status is not OK"
         assert len(response.data) == 5, "Unexpected number of CVEs returned"

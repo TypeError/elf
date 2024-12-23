@@ -38,7 +38,7 @@ TagEnum = Literal["unsupported-when-assigned", "exclusively-hosted-service", "di
 ScoreType = float
 
 
-class LangString(BaseModel):
+class NistNvdLangString(BaseModel):
     """Represents a localized description string.
 
     Attributes:
@@ -58,7 +58,7 @@ class LangString(BaseModel):
     model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
 
-class Reference(BaseModel):
+class NistNvdReference(BaseModel):
     """Represents a reference link with optional source and tags.
 
     References provide supplemental information relevant to the vulnerability,
@@ -84,7 +84,7 @@ class Reference(BaseModel):
     model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
 
-class VendorComment(BaseModel):
+class NistNvdVendorComment(BaseModel):
     """An official vendor comment regarding a CVE.
 
     Vendor comments can provide remediation guidance, analysis, or additional
@@ -108,7 +108,7 @@ class VendorComment(BaseModel):
     model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
 
-class Weakness(BaseModel):
+class NistNvdWeakness(BaseModel):
     """Represents a known weakness (e.g., CWE) associated with the CVE.
 
     Attributes:
@@ -120,14 +120,14 @@ class Weakness(BaseModel):
 
     source: str = Field(..., description="Source organization of the weakness data.")
     type: str = Field(..., description="Type or identifier of the weakness, e.g., CWE-79.")
-    description: list[LangString] = Field(
+    description: list[NistNvdLangString] = Field(
         ..., description="Localized descriptions of the weakness."
     )
 
     model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
 
-class CpeMatch(BaseModel):
+class NistNvdCpeMatch(BaseModel):
     """CPE match criteria identifying affected products or configurations.
 
     Part of the configuration data, these criteria specify which products
@@ -175,7 +175,7 @@ class CpeMatch(BaseModel):
     model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
 
-class Node(BaseModel):
+class NistNvdNode(BaseModel):
     """Defines a logical configuration node that may contain CPE matches or child nodes.
 
     The `operator` indicates how the conditions within the node relate
@@ -195,15 +195,15 @@ class Node(BaseModel):
         ..., description="Logical operator for combining child conditions."
     )
     negate: bool = Field(..., description="Indicates whether the node's logic is negated.")
-    cpe_match: list[CpeMatch] | None = Field(
+    cpe_match: list[NistNvdCpeMatch] | None = Field(
         alias="cpeMatch", default=None, description="CPE matches defining affected products."
     )
-    children: list[Node] | None = Field(
+    children: list[NistNvdNode] | None = Field(
         default=None, description="Child nodes to form complex logical structures."
     )
 
     @model_validator(mode="after")
-    def check_cpe_match_or_children(self) -> Node:
+    def check_cpe_match_or_children(self) -> NistNvdNode:
         """Ensure that either cpe_match or children is present."""
         if not self.cpe_match and not self.children:
             raise ValueError("Either cpe_match or children must be present in a Node.")
@@ -212,7 +212,7 @@ class Node(BaseModel):
     model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
 
-class Configuration(BaseModel):
+class NistNvdConfiguration(BaseModel):
     """Represents a set of configuration nodes conveying product applicability.
 
     This object identifies which products, versions, or configurations are
@@ -223,12 +223,14 @@ class Configuration(BaseModel):
 
     """
 
-    nodes: list[Node] = Field(..., description="List of logical nodes describing configurations.")
+    nodes: list[NistNvdNode] = Field(
+        ..., description="List of logical nodes describing configurations."
+    )
 
     model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
 
-class CveTag(BaseModel):
+class NistNvdCveTag(BaseModel):
     """CVE Tags providing contextual classification or notes about the CVE.
 
     These tags can indicate special conditions like disputed vulnerabilities,
@@ -252,7 +254,7 @@ class CveTag(BaseModel):
     model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
 
-class CvssV31Data(BaseModel):
+class NistNvdCvssV31Data(BaseModel):
     """CVSS v3.1 metric data describing the severity and exploitation characteristics of a vulnerability.
 
     Attributes:
@@ -306,7 +308,7 @@ class CvssV31Data(BaseModel):
     model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
 
-class CvssV31(BaseModel):
+class NistNvdCvssV31(BaseModel):
     """CVSS v3.1 scoring record provided by a source.
 
     Contains the CVSS v3.1 data and optional exploitability and impact sub-scores.
@@ -324,7 +326,7 @@ class CvssV31(BaseModel):
     type: Literal["Primary", "Secondary"] = Field(
         ..., description="Indicates whether the source is primary or secondary."
     )
-    cvss_data: CvssV31Data = Field(alias="cvssData", description="CVSS v3.1 metric details.")
+    cvss_data: NistNvdCvssV31Data = Field(alias="cvssData", description="CVSS v3.1 metric details.")
     exploitability_score: ScoreType | None = Field(
         alias="exploitabilityScore", default=None, description="Exploitability sub-score."
     )
@@ -335,7 +337,7 @@ class CvssV31(BaseModel):
     model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
 
-class CvssV2Data(BaseModel):
+class NistNvdCvssV2Data(BaseModel):
     """CVSS v2.0 metric data describing severity and exploitability.
 
     Attributes:
@@ -376,7 +378,7 @@ class CvssV2Data(BaseModel):
     model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
 
-class CvssV2(BaseModel):
+class NistNvdCvssV2(BaseModel):
     """CVSS v2.0 scoring record provided by a source.
 
     Attributes:
@@ -398,7 +400,9 @@ class CvssV2(BaseModel):
     type: Literal["Primary", "Secondary"] = Field(
         ..., description="Indicates if the source is primary or secondary."
     )
-    cvss_data: CvssV2Data = Field(alias="cvssData", description="Detailed CVSS v2.0 metrics.")
+    cvss_data: NistNvdCvssV2Data = Field(
+        alias="cvssData", description="Detailed CVSS v2.0 metrics."
+    )
     base_severity: SeverityType = Field(
         alias="baseSeverity", description="Base severity rating from CVSS v2."
     )
@@ -433,7 +437,7 @@ class CvssV2(BaseModel):
     model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
 
-class Metrics(BaseModel):
+class NistNvdMetrics(BaseModel):
     """Encapsulates CVSS metrics for a CVE, including CVSSv2 and/or CVSSv3.1.
 
     This object is optional and only present if a CVE has been analyzed and
@@ -445,12 +449,12 @@ class Metrics(BaseModel):
 
     """
 
-    cvss_metric_v31: list[CvssV31] | None = Field(
+    cvss_metric_v31: list[NistNvdCvssV31] | None = Field(
         alias="cvssMetricV31",
         default=None,
         description="List of CVSS v3.1 metric records if available.",
     )
-    cvss_metric_v2: list[CvssV2] | None = Field(
+    cvss_metric_v2: list[NistNvdCvssV2] | None = Field(
         alias="cvssMetricV2",
         default=None,
         description="List of CVSS v2 metric records if available.",
@@ -459,7 +463,7 @@ class Metrics(BaseModel):
     model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
 
-class CveItem(BaseModel):
+class NistNvdCveItem(BaseModel):
     """Represents a single CVE entry with detailed vulnerability data as per the NVD schema.
 
     According to NVD:
@@ -540,23 +544,27 @@ class CveItem(BaseModel):
         default=None,
         description="Name of the vulnerability in the CISA KEV Catalog.",
     )
-    cve_tags: list[CveTag] | None = Field(
+    cve_tags: list[NistNvdCveTag] | None = Field(
         alias="cveTags",
         default=None,
         description="Tags for additional CVE context (e.g., disputed).",
     )
-    descriptions: list[LangString] = Field(..., description="List of localized CVE descriptions.")
-    references: list[Reference] = Field(
+    descriptions: list[NistNvdLangString] = Field(
+        ..., description="List of localized CVE descriptions."
+    )
+    references: list[NistNvdReference] = Field(
         ..., description="List of references providing supplemental data."
     )
-    metrics: Metrics | None = Field(None, description="CVSS metrics and scores, if available.")
-    weaknesses: list[Weakness] | None = Field(
+    metrics: NistNvdMetrics | None = Field(
+        None, description="CVSS metrics and scores, if available."
+    )
+    weaknesses: list[NistNvdWeakness] | None = Field(
         None, description="Associated weaknesses (e.g., CWE) for the CVE."
     )
-    configurations: list[Configuration] | None = Field(
+    configurations: list[NistNvdConfiguration] | None = Field(
         None, description="Product configuration applicability."
     )
-    vendor_comments: list[VendorComment] | None = Field(
+    vendor_comments: list[NistNvdVendorComment] | None = Field(
         alias="vendorComments",
         default=None,
         description="Official comments from vendors about the CVE.",
@@ -565,7 +573,7 @@ class CveItem(BaseModel):
     model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
 
-class DefCveItem(BaseModel):
+class NistNvdDefCveItem(BaseModel):
     """Wrapper object containing a single CVE item.
 
     Attributes:
@@ -573,7 +581,7 @@ class DefCveItem(BaseModel):
 
     """
 
-    cve: CveItem = Field(..., description="A single CVE item as defined by the NVD schema.")
+    cve: NistNvdCveItem = Field(..., description="A single CVE item as defined by the NVD schema.")
 
     model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
@@ -608,14 +616,14 @@ class NistNvdCveResponse(BaseModel):
     format: str = Field(..., description="Format of the response, e.g., 'JSON'.")
     version: str = Field(..., description="Version of the NVD API schema.")
     timestamp: datetime = Field(..., description="Timestamp of when this response was generated.")
-    vulnerabilities: list[DefCveItem] = Field(
+    vulnerabilities: list[NistNvdDefCveItem] = Field(
         alias="vulnerabilities", description="List of CVE items returned by NVD."
     )
 
     model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
 
-class ChangeDetail(BaseModel):
+class NistNvdChangeDetail(BaseModel):
     """Describes a single detail of a historical change to a CVE record.
 
     Attributes:
@@ -640,7 +648,7 @@ class ChangeDetail(BaseModel):
     model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
 
-class Change(BaseModel):
+class NistNvdChange(BaseModel):
     """Represents a single CVE change event from the NVD historical record.
 
     Attributes:
@@ -660,12 +668,14 @@ class Change(BaseModel):
         alias="sourceIdentifier", description="Source identifier for this change event."
     )
     created: datetime = Field(..., description="Timestamp when the change was recorded.")
-    details: list[ChangeDetail] = Field(..., description="List of changes made to the CVE record.")
+    details: list[NistNvdChangeDetail] = Field(
+        ..., description="List of changes made to the CVE record."
+    )
 
     model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
 
-class CveChangeItem(BaseModel):
+class NistNvdCveChangeItem(BaseModel):
     """Container object holding a single CVE change event.
 
     Attributes:
@@ -673,7 +683,7 @@ class CveChangeItem(BaseModel):
 
     """
 
-    change: Change = Field(..., description="A single historical change event for a CVE.")
+    change: NistNvdChange = Field(..., description="A single historical change event for a CVE.")
 
     model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
@@ -706,7 +716,7 @@ class NistNvdCveHistoryResponse(BaseModel):
     timestamp: datetime = Field(
         ..., description="Timestamp of when this history response was generated."
     )
-    cve_changes: list[CveChangeItem] = Field(
+    cve_changes: list[NistNvdCveChangeItem] = Field(
         alias="cveChanges", description="List of CVE change events returned by NVD."
     )
 

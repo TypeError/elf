@@ -12,8 +12,8 @@ Attribution:
     The data utilized here is sourced from the Cybersecurity and Infrastructure Security Agency (CISA).
 
 Classes:
-    - CisaKevVulnerability: Represents a single vulnerability entry in the KEV catalog.
-    - CisaKevCatalog: Represents the entire KEV catalog, including metadata and vulnerabilities.
+    - `CisaKevVulnerability`: Represents a single vulnerability entry in the KEV catalog.
+    - `CisaKevCatalog`: Represents the entire KEV catalog, including metadata and vulnerabilities.
 
 Typical Usage Example:
     >>> from elf.sources.cisa_kev.models import CisaKevCatalog
@@ -36,44 +36,37 @@ JsonValue = str | int | float | bool | None | dict[str, "JsonValue"] | list["Jso
 class CisaKevVulnerability(BaseModel):
     """Represents a single vulnerability entry in the CISA KEV catalog.
 
-    According to the KEV schema:
-    Required fields:
-        cveID, vendorProject, product, vulnerabilityName, dateAdded,
-        shortDescription, requiredAction, dueDate.
-
-    Optional fields:
-        knownRansomwareCampaignUse, notes, cwes.
-
     Attributes:
-        cve_id (str): The CVE identifier, e.g., "CVE-2021-34527".
-            Must match the pattern: ^CVE-[0-9]{4}-[0-9]{4,19}$.
+        cve_id (str): The CVE identifier (e.g., "CVE-2021-34527").
+            Must match the pattern: `^CVE-[0-9]{4}-[0-9]{4,19}$`.
         vendor_project (str): The vendor or project associated with the affected product.
         product (str): The name of the affected product.
         vulnerability_name (str): A short, descriptive name for the vulnerability.
-        date_added (date): The date when the vulnerability was added to the KEV catalog (YYYY-MM-DD).
+        date_added (date): The date the vulnerability was added to the KEV catalog (YYYY-MM-DD).
         short_description (str): A brief description of the vulnerability.
         required_action (str): The recommended or required remediation action.
         due_date (date): The deadline for taking action (YYYY-MM-DD).
-        known_ransomware_campaign_use (str | None):
-            "Known" if this vulnerability is used in ransomware campaigns, "Unknown" otherwise.
+        known_ransomware_campaign_use (str | None): Indicates if ransomware campaigns exploit this vulnerability.
+            - `"Known"` if associated with ransomware campaigns.
+            - `"Unknown"` otherwise.
         notes (str | None): Additional notes or context about the vulnerability.
-        cwes (list[str] | None): Associated CWE identifiers, each in the format CWE-NNNN.
+        cwes (list[str] | None): Associated CWE identifiers (e.g., "CWE-79").
 
     """
 
     cve_id: Annotated[str, constr(pattern=r"^CVE-\d{4}-\d{4,19}$")] = Field(
         ...,
         alias="cveID",
-        description="The CVE ID (e.g., CVE-2021-34527), matching pattern ^CVE-YYYY-#########.",
+        description="CVE ID (e.g., CVE-2021-34527), following the format `CVE-YYYY-#########`.",
     )
     vendor_project: str = Field(
         ...,
         alias="vendorProject",
-        description="Vendor or project name associated with the affected product.",
+        description="Vendor or project name related to the affected product.",
     )
     product: str = Field(..., description="Name of the affected product.")
     vulnerability_name: str = Field(
-        ..., alias="vulnerabilityName", description="Short, descriptive name for the vulnerability."
+        ..., alias="vulnerabilityName", description="Short, descriptive name of the vulnerability."
     )
     date_added: date = Field(
         ...,
@@ -84,27 +77,23 @@ class CisaKevVulnerability(BaseModel):
         ..., alias="shortDescription", description="Brief description of the vulnerability."
     )
     required_action: str = Field(
-        ..., alias="requiredAction", description="Required or recommended remediation action."
+        ..., alias="requiredAction", description="Recommended or required remediation action."
     )
     due_date: date = Field(
-        ..., alias="dueDate", description="Date by which action must be taken (YYYY-MM-DD)."
+        ..., alias="dueDate", description="Deadline for addressing the vulnerability (YYYY-MM-DD)."
     )
     known_ransomware_campaign_use: str | None = Field(
         None,
         alias="knownRansomwareCampaignUse",
         description=(
-            "'Known' if this vulnerability is known to be leveraged in ransomware campaigns, "
-            "'Unknown' otherwise."
+            "Indicates ransomware exploitation: 'Known' for known campaigns, 'Unknown' otherwise."
         ),
     )
     notes: str | None = Field(
         None, description="Additional notes or context about the vulnerability."
     )
     cwes: list[str] | None = Field(
-        None,
-        description=(
-            "List of CWE identifiers associated with this vulnerability, each in the format CWE-####."
-        ),
+        None, description="List of CWE identifiers (e.g., ['CWE-79', 'CWE-89'])."
     )
 
     model_config = ConfigDict(
@@ -116,18 +105,11 @@ class CisaKevVulnerability(BaseModel):
 class CisaKevCatalog(BaseModel):
     """Represents the entire CISA Known Exploited Vulnerabilities (KEV) catalog.
 
-    According to the KEV schema:
-    Required fields: catalogVersion, dateReleased, count, vulnerabilities.
-
     Attributes:
-        catalog_version (str): The version of the KEV catalog.
-        date_released (datetime): The release date/time of the catalog in ISO 8601 format (UTC).
-        count (int): Total number of known exploited vulnerabilities listed.
-        vulnerabilities (list[CisaKevVulnerability]): List of vulnerabilities in the catalog.
-
-    Note on date_released:
-    The schema specifies `dateReleased` as a date-time with the format `YYYY-MM-DDTHH:mm:ss.sssZ`.
-    A validator normalizes this string into a Python datetime object.
+        catalog_version (str): Version number of the KEV catalog.
+        date_released (datetime): Release date/time of the catalog in ISO 8601 format (UTC).
+        count (int): Total number of vulnerabilities listed in the catalog.
+        vulnerabilities (list[CisaKevVulnerability]): List of vulnerabilities in the KEV catalog.
 
     Example:
         >>> from elf.sources.cisa_kev.models import CisaKevCatalog
@@ -137,24 +119,33 @@ class CisaKevCatalog(BaseModel):
     """
 
     catalog_version: str = Field(
-        ..., alias="catalogVersion", description="Version of the KEV catalog."
+        ..., alias="catalogVersion", description="Version number of the KEV catalog."
     )
     date_released: datetime = Field(
         ...,
         alias="dateReleased",
-        description="Release timestamp of the catalog (e.g., 2024-01-15T12:00:00.000Z).",
+        description="Release timestamp of the catalog (ISO 8601, e.g., 2024-01-15T12:00:00.000Z).",
     )
-    count: int = Field(
-        ..., description="Total number of Known Exploited Vulnerabilities in the catalog."
-    )
+    count: int = Field(..., description="Total number of vulnerabilities in the KEV catalog.")
     vulnerabilities: list[CisaKevVulnerability] = Field(
-        ..., description="List of exploited vulnerabilities included in the catalog."
+        ..., description="List of vulnerabilities included in the KEV catalog."
     )
 
     @model_validator(mode="before")
     @classmethod
     def normalize_date(cls, values: dict[str, JsonValue]) -> dict[str, JsonValue]:
-        """Normalize `dateReleased` field into a datetime object."""
+        """Normalize the `dateReleased` field into a Python datetime object.
+
+        Args:
+            values (dict[str, JsonValue]): Dictionary of field values from the input data.
+
+        Returns:
+            dict[str, JsonValue]: Updated dictionary with `dateReleased` parsed as a datetime object.
+
+        Raises:
+            ValueError: If `dateReleased` is not in the correct format.
+
+        """
         date_val = values.get("dateReleased")
         if isinstance(date_val, str):
             new_val = date_val.replace("Z", "+00:00")

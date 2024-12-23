@@ -21,7 +21,6 @@ import csv
 import gzip
 import logging
 from collections.abc import AsyncGenerator
-from enum import Enum
 from io import BytesIO, StringIO
 from typing import Any, Literal
 
@@ -36,15 +35,9 @@ from elf.core.exceptions import (
     ApiClientTimeoutError,
 )
 from elf.sources.first_epss.models import (
+    FirstEpssOrderOption,
     FirstEpssScoreResponse,
 )
-
-
-class OrderOption(str, Enum):
-    """Enumeration for ordering options in the EPSS API."""
-
-    EPS = "!epss"
-    PERCENTILE = "!percentile"
 
 
 def _alias_generator(field_name: str) -> str:
@@ -66,7 +59,7 @@ class BaseRequestParams(BaseModel):
         None, ge=0.0, le=100.0, description="Maximum percentile threshold."
     )
     q: str | None = Field(None, description="Query string for additional filtering.")
-    order: OrderOption | None = Field(
+    order: FirstEpssOrderOption | None = Field(
         None, description="Specify ordering of results (e.g., `!epss`)."
     )
     scope: Literal["time-series"] | None = Field(
@@ -163,7 +156,7 @@ class FirstEpssApiClient(BaseApiClient):
         percentile_gt: float | None = None,
         percentile_lt: float | None = None,
         q: str | None = None,
-        order: OrderOption | None = None,
+        order: FirstEpssOrderOption | None = None,
         scope: Literal["time-series"] | None = None,
         # Global parameters
         offset: int | None = None,
@@ -268,7 +261,7 @@ class FirstEpssApiClient(BaseApiClient):
         percentile_gt: float | None = None,
         percentile_lt: float | None = None,
         q: str | None = None,
-        order: OrderOption | None = None,
+        order: FirstEpssOrderOption | None = None,
         scope: Literal["time-series"] | None = None,
         offset: int | None = None,
         limit: int | None = None,
@@ -365,7 +358,7 @@ class FirstEpssApiClient(BaseApiClient):
         percentile_gt: float | None = None,
         percentile_lt: float | None = None,
         q: str | None = None,
-        order: OrderOption | None = None,
+        order: FirstEpssOrderOption | None = None,
         scope: Literal["time-series"] | None = None,
         offset: int | None = None,
         limit: int | None = None,
@@ -428,7 +421,7 @@ class FirstEpssApiClient(BaseApiClient):
         percentile_gt: float | None = None,
         percentile_lt: float | None = None,
         q: str | None = None,
-        order: OrderOption | None = None,
+        order: FirstEpssOrderOption | None = None,
         scope: Literal["time-series"] | None = None,
         offset: int | None = None,
         limit: int | None = None,
@@ -517,7 +510,7 @@ class FirstEpssApiClient(BaseApiClient):
         percentile_gt: float | None = None,
         percentile_lt: float | None = None,
         q: str | None = None,
-        order: OrderOption | None = None,
+        order: FirstEpssOrderOption | None = None,
         scope: Literal["time-series"] | None = None,
         offset: int | None = None,
         limit: int | None = None,
@@ -582,7 +575,7 @@ class FirstEpssApiClient(BaseApiClient):
         percentile_gt: float | None = None,
         percentile_lt: float | None = None,
         q: str | None = None,
-        order: OrderOption | None = None,
+        order: FirstEpssOrderOption | None = None,
         scope: Literal["time-series"] | None = None,
         offset: int | None = None,
         limit: int | None = None,
@@ -669,7 +662,7 @@ class FirstEpssApiClient(BaseApiClient):
         percentile_gt: float | None = None,
         percentile_lt: float | None = None,
         q: str | None = None,
-        order: OrderOption | None = None,
+        order: FirstEpssOrderOption | None = None,
         offset: int | None = None,
         limit: int = 100,  # Default to 100
         envelope: bool = False,
@@ -745,7 +738,7 @@ class FirstEpssApiClient(BaseApiClient):
         percentile_gt: float | None = None,
         percentile_lt: float | None = None,
         q: str | None = None,
-        order: OrderOption | None = None,
+        order: FirstEpssOrderOption | None = None,
         offset: int | None = None,
         limit: int = 100,  # Default to 100
         envelope: bool = False,
@@ -828,7 +821,7 @@ class FirstEpssApiClient(BaseApiClient):
         percentile_gt: float | None = None,
         percentile_lt: float | None = None,
         q: str | None = None,
-        order: OrderOption | None = None,
+        order: FirstEpssOrderOption | None = None,
         scope: Literal["time-series"] | None = None,
         limit_per_request: int = 100,
         max_records: int | None = None,
@@ -938,7 +931,7 @@ class FirstEpssApiClient(BaseApiClient):
         percentile_gt: float | None = None,
         percentile_lt: float | None = None,
         q: str | None = None,
-        order: OrderOption | None = None,
+        order: FirstEpssOrderOption | None = None,
         scope: Literal["time-series"] | None = None,
         limit_per_request: int = 100,
         max_records: int | None = None,

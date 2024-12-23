@@ -1,40 +1,41 @@
 """Sources module for the `elf` package.
 
-This module provides API clients and models for interacting with data sources such as:
-    - CISA KEV
-    - FIRST EPSS
-    - NIST NVD
+Provides API clients and data models for interacting with:
+    - CISA Known Exploited Vulnerabilities (KEV)
+    - FIRST Exploit Prediction Scoring System (EPSS)
+    - NIST National Vulnerability Database (NVD)
 
-Public API:
+Exports:
     - API Clients:
         - `CisaKevApiClient`
         - `FirstEpssApiClient`
         - `NistNvdApiClient`
     - Models:
-        - CISA KEV Models:
+        - CISA KEV:
             - `CisaKevCatalog`
             - `CisaKevVulnerability`
-        - FIRST EPSS Models:
+        - FIRST EPSS:
             - `FirstEpssScoreResponse`
-            - `EpssScoreItem`
-        - NIST NVD Models:
+            - `FirstEpssEpssScoreItem`
+            - `FirstEpssOrderOption`
+        - NIST NVD:
             - `NistNvdCveResponse`
             - `NistNvdCveHistoryResponse`
-            - `CveItem`
-            - `Change`
-            - `ChangeDetail`
+            - `NistNvdCveItem`
+            - `NistNvdChange`
+            - `NistNvdChangeDetail`
 """
 
 from .cisa_kev.client import CisaKevApiClient
 from .cisa_kev.models import CisaKevCatalog, CisaKevVulnerability
 from .first_epss.client import FirstEpssApiClient
-from .first_epss.models import EpssScoreItem, FirstEpssScoreResponse
+from .first_epss.models import FirstEpssEpssScoreItem, FirstEpssOrderOption, FirstEpssScoreResponse
 from .nist_nvd.client import NistNvdApiClient
 from .nist_nvd.models import (
-    Change,
-    ChangeDetail,
-    CveItem,
+    NistNvdChange,
+    NistNvdChangeDetail,
     NistNvdCveHistoryResponse,
+    NistNvdCveItem,
     NistNvdCveResponse,
 )
 
@@ -48,11 +49,12 @@ __all__ = [
     "CisaKevVulnerability",
     # FIRST EPSS Models
     "FirstEpssScoreResponse",
-    "EpssScoreItem",
+    "FirstEpssEpssScoreItem",
+    "FirstEpssOrderOption",
     # NIST NVD Models
     "NistNvdCveResponse",
     "NistNvdCveHistoryResponse",
-    "CveItem",
-    "Change",
-    "ChangeDetail",
+    "NistNvdCveItem",
+    "NistNvdChange",
+    "NistNvdChangeDetail",
 ]

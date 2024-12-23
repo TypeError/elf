@@ -1,16 +1,34 @@
 """NIST NVD API module.
 
-This module provides:
-    - The `NistNvdApiClient` for interacting with the NIST National Vulnerability Database API.
-    - Pydantic models for handling NVD responses and data structures.
+Provides tools for interacting with the NIST National Vulnerability Database (NVD) API.
+
+Features:
+    - `NistNvdApiClient`: API client for fetching and processing NVD CVE data.
+    - Data models for validating CVE responses and change histories.
+
+Exports:
+    - API Client:
+        - `NistNvdApiClient`
+    - Models:
+        - `NistNvdCveResponse`: Represents NVD CVE responses.
+        - `NistNvdCveHistoryResponse`: Represents NVD CVE change history.
+        - `NistNvdCveItem`: Represents individual CVE items.
+        - `NistNvdChange`: Represents CVE change events.
+        - `NistNvdChangeDetail`: Represents detailed information about CVE changes.
+
+Example Usage:
+    >>> from elf.sources.nist_nvd import NistNvdApiClient
+    >>> async with NistNvdApiClient() as client:
+    >>>     cve = await client.get_cve("CVE-2023-12345")
+    >>>     print(cve.id, cve.metrics)
 """
 
 from .client import NistNvdApiClient
 from .models import (
-    Change,
-    ChangeDetail,
-    CveItem,
+    NistNvdChange,
+    NistNvdChangeDetail,
     NistNvdCveHistoryResponse,
+    NistNvdCveItem,
     NistNvdCveResponse,
 )
 
@@ -18,7 +36,7 @@ __all__ = [
     "NistNvdApiClient",
     "NistNvdCveResponse",
     "NistNvdCveHistoryResponse",
-    "CveItem",
-    "Change",
-    "ChangeDetail",
+    "NistNvdCveItem",
+    "NistNvdChange",
+    "NistNvdChangeDetail",
 ]

@@ -1,5 +1,3 @@
-# type: ignore
-
 import pytest
 from datetime import datetime
 from elf import CisaKevApiClient
@@ -52,7 +50,7 @@ async  def test_cisa_kev_csv_fetch():
 async def test_cisa_kev_json_paginated():
     """Test the paginated fetching of KEV data and verify chunks."""
     async with CisaKevApiClient() as client:
-        chunks = []
+        chunks: list[CisaKevCatalog] = []
         async for chunk in client.get_kev_json_paginated(chunk_size=50):
             assert len(chunk.vulnerabilities) <= 50, "Chunk size exceeds limit"
             chunks.append(chunk)
@@ -90,7 +88,7 @@ async def test_cisa_kev_known_cve():
 async def test_cisa_kev_json_small_chunk():
     """Test pagination with a very small chunk size to ensure correctness and uniqueness of pages."""
     async with CisaKevApiClient() as client:
-        seen_cves = set()
+        seen_cves: set[str] = set()
         count_chunks = 0
         async for chunk in client.get_kev_json_paginated(chunk_size=1):
             assert len(chunk.vulnerabilities) == 1, "Chunk size is not respected with chunk_size=1"
@@ -106,7 +104,7 @@ async def test_cisa_kev_json_small_chunk():
 async def test_cisa_kev_json_large_chunk():
     """Test pagination with a large chunk size, ensuring that it doesn't fail and returns at least one chunk."""
     async with CisaKevApiClient() as client:
-        chunks = []
+        chunks: list[CisaKevCatalog] = []
         async for chunk in client.get_kev_json_paginated(chunk_size=5000):
             chunks.append(chunk)
             break  # Just verify we get at least one chunk
