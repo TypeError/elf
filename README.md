@@ -259,9 +259,9 @@ async def fetch_cve_history():
 
 # Run examples
 async def main():
-    # await fetch_cve_details()
+    await fetch_cve_details()
     await search_cves()
-    # await fetch_cve_history()
+    await fetch_cve_history()
 
 
 asyncio.run(main())
